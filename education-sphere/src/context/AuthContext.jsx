@@ -13,13 +13,13 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  // Load user from localStorage
+  // Load logged-in user from localStorage
   useEffect(() => {
     const storedUser = localStorage.getItem("schoolUser");
     if (storedUser) setUser(JSON.parse(storedUser));
   }, []);
 
-  // Persist user to localStorage
+  // Persist logged-in user to localStorage
   useEffect(() => {
     if (user) localStorage.setItem("schoolUser", JSON.stringify(user));
     else localStorage.removeItem("schoolUser");
@@ -31,16 +31,11 @@ export const AuthProvider = ({ children }) => {
 
     return new Promise((resolve) => {
       setTimeout(() => {
-        // Example hardcoded users (replace with real API)
-        const mockUsers = [
-          { id: "A001", name: "Admin ", email: "admin@example.com", password: "Adm1n$ecure2025!", role: "admin" },
-          { id: "T001", name: "Teacher", email: "teacher@example.com", password: "T3ach3r#SafePass!", role: "teacher" },
-          { id: "F001", name: "Finance", email: "finance@example.com", password: "F1nance@Strong$2025", role: "finance" },
-          { id: "P001", name: "Parent", email: "parent@example.com", password: "P@r3ntSafe2025!", role: "parent" },
-          { id: "S001", name: "Student", email: "student@example.com", password: "Stud@2025!", role: "student" },
-        ];
+        // Get registered users from localStorage
+        const users = JSON.parse(localStorage.getItem("users") || "[]");
 
-        const found = mockUsers.find(
+        // Find user with matching email, password, and role
+        const found = users.find(
           (u) => u.email === email && u.password === password && u.role === role
         );
 
@@ -64,8 +59,31 @@ export const AuthProvider = ({ children }) => {
 
     return new Promise((resolve) => {
       setTimeout(() => {
-        // In real app, call backend to create user
-        const newUser = { id: Date.now().toString(), name, email, password, role };
+        // Load users from localStorage
+        const users = JSON.parse(localStorage.getItem("users") || "[]");
+
+        // Check if email is already registered
+        if (users.some((u) => u.email === email)) {
+          message.error("Email already registered");
+          setLoading(false);
+          resolve(false);
+          return;
+        }
+
+        // Create new user
+        const newUser = {
+          id: Date.now().toString(), // unique ID for dashboard mapping
+          name,
+          email,
+          password,
+          role,
+        };
+
+        // Save to localStorage
+        users.push(newUser);
+        localStorage.setItem("users", JSON.stringify(users));
+
+        // Set user in context
         setUser(newUser);
         message.success("Account created successfully!");
         setLoading(false);
@@ -81,7 +99,16 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        setUser,
+        loading,
+        login,
+        register,
+        logout,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
