@@ -20,7 +20,6 @@ import ParentDashboard from "../pages/parent/ParentDashboard";
 import StudentDashboard from "../pages/students/StudentDashboard";
 import StudentProfile from "../pages/students/StudentProfile";
 import Attendance from "../pages/students/Attendance";
-import Application from "../pages/students/Application";
 import AcademicProgress from "../pages/students/AcademicProgress";
 import Fees from "../pages/students/Fees";
 
@@ -100,7 +99,6 @@ const AppRoutes = () => {
         <Route index element={<StudentDashboard />} />
         <Route path="profile" element={<StudentProfile />} />
         <Route path="attendance" element={<Attendance />} />
-        <Route path="application" element={<Application />} />
         <Route path="academic" element={<AcademicProgress />} />
         <Route path="fees" element={<Fees />} />
       </Route>
