@@ -1,11 +1,20 @@
-// src/pages/admin/AssignAttendance.jsx
+// src/pages/admin/AssignGrades.jsx
 import React, { useState } from "react";
-import { Table, Button, Form, Input, Modal, Space, Card, message } from "antd";
-import { MinusCircleOutlined, PlusOutlined } from "@ant-design/icons";
+import { Table, Button, Modal, Form, Input, Card, message } from "antd";
 import { useAuth } from "../../context/AuthContext";
 
-const AssignAttendance = () => {
-  const { students, setStudents } = useAuth(); // REAL STUDENT DATA
+const gradeToPoint = {
+  "A+": 5,
+  A: 4.5,
+  "B+": 4,
+  B: 3.5,
+  C: 3,
+  D: 2,
+  F: 0,
+};
+
+const AssignGrades = () => {
+  const { students, setStudents } = useAuth();
   const [editingStudent, setEditingStudent] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
 
@@ -14,30 +23,48 @@ const AssignAttendance = () => {
     setModalVisible(true);
   };
 
-  const saveAttendance = (values) => {
-    const updated = students.map((s) =>
-      s.regNo === editingStudent.regNo
-        ? { ...s, attendanceRecords: values.attendanceRecords }
-        : s
-    );
+  const saveGrades = (values) => {
+    const updatedStudents = students.map((s) => {
+      if (s.regNo === editingStudent.regNo) {
+        const grades = values.grades || [];
+        const totalPoints = grades.reduce(
+          (sum, g) => sum + (gradeToPoint[g.grade] || 0),
+          0
+        );
+        const gpa = grades.length ? (totalPoints / grades.length).toFixed(2) : 0;
+        return { ...s, grades, gpa };
+      }
+      return s;
+    });
 
-    setStudents(updated);
-    message.success("Attendance updated successfully!");
+    setStudents(updatedStudents);
+    message.success("Grades updated successfully!");
     setModalVisible(false);
   };
 
   const columns = [
-    { title: "Reg No", dataIndex: "regNo", key: "regNo" },
     { title: "Name", dataIndex: "name", key: "name" },
+    { title: "Reg No", dataIndex: "regNo", key: "regNo" },
+    {
+      title: "GPA",
+      dataIndex: "gpa",
+      key: "gpa",
+      render: (val) => val || "N/A",
+    },
     {
       title: "Action",
+      key: "action",
       render: (_, record) => (
         <Button
           type="primary"
           onClick={() => openModal(record)}
-          style={{ backgroundColor: "#0B3D91", borderColor: "#FFD700", color: "#FFD700" }}
+          style={{
+            backgroundColor: "#0B3D91",
+            borderColor: "#FFD700",
+            color: "#FFD700",
+          }}
         >
-          Assign Attendance
+          Assign Grades
         </Button>
       ),
     },
@@ -45,9 +72,7 @@ const AssignAttendance = () => {
 
   return (
     <Card className="p-6 shadow-lg rounded-lg">
-      <h1 className="text-2xl font-bold mb-6 text-yellow-500">
-        Assign Attendance
-      </h1>
+      <h1 className="text-2xl font-bold mb-6 text-yellow-500">Assign Grades</h1>
 
       <Table
         columns={columns}
@@ -55,47 +80,54 @@ const AssignAttendance = () => {
         rowKey="regNo"
         bordered
         pagination={{ pageSize: 8 }}
-        rowClassName={(record, index) => (index % 2 === 0 ? "bg-white" : "bg-gray-50")}
+        rowClassName={(record, index) =>
+          index % 2 === 0 ? "bg-white" : "bg-gray-50"
+        }
         scroll={{ x: "max-content" }}
-        className="assign-attendance-table"
+        className="assign-grades-table"
       />
 
       <Modal
-        title={`Assign Attendance - ${editingStudent?.name}`}
+        title={`Assign Grades - ${editingStudent?.name || ""}`}
         open={modalVisible}
-        onCancel={() => setModalVisible(false)}
         footer={null}
+        onCancel={() => setModalVisible(false)}
         width={600}
       >
         {editingStudent && (
           <Form
             layout="vertical"
-            onFinish={saveAttendance}
             initialValues={{
-              attendanceRecords: editingStudent.attendanceRecords || [],
+              grades:
+                editingStudent.grades && editingStudent.grades.length
+                  ? editingStudent.grades
+                  : [{}], // always start with 1 empty row
             }}
+            onFinish={saveGrades}
           >
-            <Form.List name="attendanceRecords">
+            <Form.List name="grades">
               {(fields, { add, remove }) => (
-                <Card title="Attendance Records" size="small" className="mb-4 shadow-md">
+                <>
                   {fields.map(({ key, name, ...restField }) => (
-                    <Space key={key} align="baseline" className="mb-3">
+                    <div key={key} className="flex gap-2 mb-2">
                       <Form.Item
                         {...restField}
-                        name={[name, "month"]}
-                        rules={[{ required: true, message: "Month required" }]}
+                        name={[name, "subject"]}
+                        rules={[{ required: true, message: "Enter subject" }]}
                       >
-                        <Input placeholder="Month e.g. Jan" />
+                        <Input placeholder="Subject" />
                       </Form.Item>
                       <Form.Item
                         {...restField}
-                        name={[name, "percentage"]}
-                        rules={[{ required: true, message: "Percentage required" }]}
+                        name={[name, "grade"]}
+                        rules={[{ required: true, message: "Enter grade" }]}
                       >
-                        <Input placeholder="Attendance e.g. 96%" />
+                        <Input placeholder="Grade (A+, A, B+…)" />
                       </Form.Item>
-                      <MinusCircleOutlined style={{ color: "#FF0000", fontSize: "18px" }} onClick={() => remove(name)} />
-                    </Space>
+                      <Button danger onClick={() => remove(name)}>
+                        Remove
+                      </Button>
+                    </div>
                   ))}
 
                   <Form.Item>
@@ -103,24 +135,27 @@ const AssignAttendance = () => {
                       type="dashed"
                       onClick={() => add()}
                       block
-                      icon={<PlusOutlined />}
                       style={{ borderColor: "#FFD700", color: "#0B3D91" }}
                     >
-                      Add Attendance
+                      Add Grade
                     </Button>
                   </Form.Item>
-                </Card>
+                </>
               )}
             </Form.List>
 
-            <Form.Item className="mt-4">
+            <Form.Item>
               <Button
                 type="primary"
                 htmlType="submit"
                 block
-                style={{ backgroundColor: "#0B3D91", borderColor: "#FFD700", color: "#FFD700" }}
+                style={{
+                  backgroundColor: "#0B3D91",
+                  borderColor: "#FFD700",
+                  color: "#FFD700",
+                }}
               >
-                Save
+                Save Grades
               </Button>
             </Form.Item>
           </Form>
@@ -129,13 +164,13 @@ const AssignAttendance = () => {
 
       <style>
         {`
-          .assign-attendance-table .ant-table-thead > tr > th {
+          .assign-grades-table .ant-table-thead > tr > th {
             background-color: #0B3D91;
             color: #FFD700;
             font-weight: bold;
             text-align: center;
           }
-          .assign-attendance-table .ant-table-tbody > tr:hover {
+          .assign-grades-table .ant-table-tbody > tr:hover {
             background-color: rgba(255, 215, 0, 0.2);
           }
         `}
@@ -144,4 +179,4 @@ const AssignAttendance = () => {
   );
 };
 
-export default AssignAttendance;
+export default AssignGrades;

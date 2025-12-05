@@ -1,103 +1,64 @@
-// src/context/AuthContext.jsx
-import React, { createContext, useContext, useState } from "react";
+import React, { createContext, useContext, useState, useEffect } from "react";
 
 const AuthContext = createContext();
 
-// eslint-disable-next-line react-refresh/only-export-components
-export const useAuth = () => useContext(AuthContext);
-
 export const AuthProvider = ({ children }) => {
-  const [users, setUsers] = useState(() => {
-    const saved = localStorage.getItem("users");
-    return saved ? JSON.parse(saved) : [];
-  });
+  const [user, setUser] = useState(null);
+  const [parents, setParents] = useState([]);
+  const [students, setStudents] = useState([]);
+  const [teachers, setTeachers] = useState([]);
 
- const [students, setStudents] = useState([]); 
+  // --- LOAD FROM STORAGE ONCE ---
+  useEffect(() => {
+    const storedUser = localStorage.getItem("user");
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (storedUser) setUser(JSON.parse(storedUser));
 
+    const storedParents = localStorage.getItem("parents");
+    if (storedParents) setParents(JSON.parse(storedParents));
+  }, []);
 
-  const [currentUser, setCurrentUser] = useState(() => {
-    const saved = localStorage.getItem("currentUser");
-    return saved ? JSON.parse(saved) : null;
-  });
+  // --- SAVE ON CHANGE ---
+  useEffect(() => {
+    localStorage.setItem("parents", JSON.stringify(parents));
+  }, [parents]);
 
-  const [loading, setLoading] = useState(false);
+  useEffect(() => {
+    localStorage.setItem("user", JSON.stringify(user));
+  }, [user]);
 
-  // Generate Student ID automatically
-  const generateRegNo = () => {
-    const year = new Date().getFullYear();
-    const seq = students.length + 1;
-    return `${year}-STD-${String(seq).padStart(3, "0")}`;
-  };
+  // =============== NEW FUNCTIONS ===============
 
-  const register = async (data) => {
-    setLoading(true);
-    try {
-      let newUser = { ...data };
-
-      if (data.role === "student") {
-        newUser.regNo = generateRegNo();
-        setStudents((prev) => {
-          const updated = [...prev, newUser];
-          localStorage.setItem("students", JSON.stringify(updated));
-          return updated;
-        });
-      }
-
-      setUsers((prev) => {
-        const updated = [...prev, newUser];
-        localStorage.setItem("users", JSON.stringify(updated));
-        return updated;
-      });
-
-      setCurrentUser(newUser);
-      localStorage.setItem("currentUser", JSON.stringify(newUser));
-
-      setLoading(false);
-      return true;
-    } catch (error) {
-      console.error(error);
-      setLoading(false);
-      return false;
-    }
-  };
-
-  const login = async (data) => {
-    setLoading(true);
-
-    const { identifier, password, role } = data;
-
-    const storedUsers = JSON.parse(localStorage.getItem("users")) || [];
-
-    const user = storedUsers.find(
-      (u) =>
-        u.role === role &&
-        (u.email === identifier || u.regNo === identifier) &&
-        u.password === password
-    );
-
-    setLoading(false);
-
-    if (!user) return false;
-
-    setCurrentUser(user);
-    localStorage.setItem("currentUser", JSON.stringify(user));
-    return true;
+  const login = (userData) => {
+    setUser(userData);
   };
 
   const logout = () => {
-    setCurrentUser(null);
-    localStorage.removeItem("currentUser");
+    setUser(null);
+    localStorage.removeItem("user");
   };
 
-  const value = {
-    users,
-    students,
-    currentUser,
-    register,
-    login,
-    logout,
-    loading,
-  };
+  // =============================================
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider
+      value={{
+        user,
+        setUser,
+        login,
+        logout,
+        parents,
+        setParents,
+        students,
+        setStudents,
+        teachers,
+        setTeachers,
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
 };
+
+// eslint-disable-next-line react-refresh/only-export-components
+export const useAuth = () => useContext(AuthContext);

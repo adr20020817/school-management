@@ -1,5 +1,6 @@
+// src/components/layout/Header.jsx
 import React, { useState, useEffect } from "react";
-import { Layout, Avatar, Dropdown, Badge, Modal, List, Button } from "antd";
+import { Layout, Avatar, Dropdown, Badge, Modal, List, Button, Spin } from "antd";
 import { BellOutlined, UserOutlined } from "@ant-design/icons";
 import { useAuth } from "../../context/AuthContext";
 import logo from "/src/assets/images/Logo.png";
@@ -11,8 +12,15 @@ const Header = () => {
   const [isProfileVisible, setProfileVisible] = useState(false);
   const [isNotifVisible, setNotifVisible] = useState(false);
   const [notifications, setNotifications] = useState([]);
+  const [loadingUser, setLoadingUser] = useState(true);
 
-  // Load notifications from localStorage
+  // Wait until user is loaded from context/localStorage
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (user) setLoadingUser(false);
+  }, [user]);
+
+  // Load notifications for students
   useEffect(() => {
     if (!user || user.role !== "student") return;
 
@@ -29,12 +37,28 @@ const Header = () => {
     return () => clearInterval(interval);
   }, [user]);
 
+  // Show empty header while loading
+  if (loadingUser) return <AntHeader style={{ height: 64, backgroundColor: "#f0f2f5" }} />;
+
+  // Role-based theme
+  const roleThemes = {
+    admin: { bg: "#0B3D91", text: "#FFD700", avatarBg: "#FFD700", avatarColor: "#0B3D91" },
+    teacher: { bg: "#FFD700", text: "#0B3D91", avatarBg: "#0B3D91", avatarColor: "#FFD700" },
+    student: { bg: "#FFFFFF", text: "#0B3D91", avatarBg: "#0B3D91", avatarColor: "#FFFFFF" },
+    parent: { bg: "#f0f2f5", text: "#0B3D91", avatarBg: "#0B3D91", avatarColor: "#FFFFFF" },
+    finance: { bg: "#0B3D91", text: "#FFD700", avatarBg: "#FFD700", avatarColor: "#0B3D91" },
+  };
+  const theme = roleThemes[user.role] || roleThemes["student"];
+
+  // User dropdown menu
   const userMenu = {
     items: [
       { key: "profile", label: "Profile", onClick: () => setProfileVisible(true) },
       { key: "logout", label: "Logout", onClick: logout },
     ],
   };
+
+  const unreadCount = notifications.filter((n) => !n.read).length;
 
   const markAsRead = (notifId) => {
     const allNotifications = JSON.parse(localStorage.getItem("notifications") || "[]");
@@ -43,41 +67,47 @@ const Header = () => {
     setNotifications(updated.filter((n) => !n.read && (!n.targetRoles || n.targetRoles.includes("student"))));
   };
 
-  const unreadCount = notifications.filter((n) => !n.read).length;
-
   return (
     <>
       <AntHeader
         style={{
-          backgroundColor: "#FFFFFF", // match sidebar & dashboard
-          padding: "0 24px",
+          backgroundColor: theme.bg,
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
+          padding: "0 24px",
+          height: 64,
           position: "sticky",
           top: 0,
           zIndex: 10,
           boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
         }}
       >
+        {/* Left: Logo + App Name + Role */}
         <div className="flex items-center gap-3">
           <img src={logo} alt="Logo" className="w-10 h-10 object-contain" />
-          <span className="text-2xl font-bold" style={{ color: "#0B3D91" }}>
-            {user?.role ? user.role.charAt(0).toUpperCase() + user.role.slice(1) : "School Management System"}
+          <span style={{ color: theme.text, fontWeight: "bold", fontSize: 20 }}>ElimuSphere</span>
+          <span style={{ color: theme.text, fontSize: 14, marginLeft: 10 }}>
+            ({user.role.charAt(0).toUpperCase() + user.role.slice(1)})
           </span>
         </div>
 
+        {/* Right: Notifications + Profile */}
         <div className="flex items-center gap-4">
-          {user?.role === "student" && (
-            <Badge count={unreadCount} offset={[0, 0]}>
+          {user.role === "student" && (
+            <Badge count={unreadCount}>
               <BellOutlined
                 style={{ fontSize: 22, color: "#FFD700", cursor: "pointer" }}
                 onClick={() => setNotifVisible(true)}
               />
             </Badge>
           )}
-          <Dropdown menu={userMenu} placement="bottomRight" trigger={['click']}>
-            <Avatar size="large" icon={<UserOutlined />} style={{ cursor: "pointer", backgroundColor: "#0B3D91" }} />
+          <Dropdown menu={userMenu} placement="bottomRight" trigger={["click"]}>
+            <Avatar
+              size="large"
+              icon={<UserOutlined />}
+              style={{ cursor: "pointer", backgroundColor: theme.avatarBg, color: theme.avatarColor }}
+            />
           </Dropdown>
         </div>
       </AntHeader>
@@ -101,12 +131,12 @@ const Header = () => {
             {user.regNo && <p><strong>Reg No:</strong> {user.regNo}</p>}
           </div>
         ) : (
-          <p>User not logged in</p>
+          <Spin />
         )}
       </Modal>
 
       {/* Notifications Modal */}
-      {user?.role === "student" && (
+      {user.role === "student" && (
         <Modal
           title="Notifications"
           open={isNotifVisible}

@@ -1,8 +1,9 @@
+// src/components/layout/Layout.jsx
 import React, { useState } from "react";
 import { Layout as AntLayout } from "antd";
 import { Outlet } from "react-router-dom";
-import Header from "./Header";
 import Sidebar from "./Sidebar";
+import Header from "./Header";
 
 const { Content } = AntLayout;
 
@@ -10,18 +11,26 @@ const Layout = ({ userRole }) => {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
+  const toggleCollapsed = () => setCollapsed(!collapsed);
+  const toggleMobile = () => setMobileOpen(!mobileOpen);
+
   return (
     <AntLayout style={{ minHeight: "100vh" }}>
+      {/* Sidebar */}
       <Sidebar
         collapsed={collapsed}
-        toggleCollapsed={() => setCollapsed(!collapsed)}
+        toggleCollapsed={toggleCollapsed}
         mobileOpen={mobileOpen}
-        toggleMobile={() => setMobileOpen(!mobileOpen)}
+        toggleMobile={toggleMobile}
         userRole={userRole}
       />
-      <AntLayout>
+
+      <AntLayout className="site-layout">
+        {/* Header */}
         <Header />
-        <Content style={{ margin: "16px" }}>
+
+        {/* Main Content */}
+        <Content style={{ margin: "24px", backgroundColor: "#f9f9f9", minHeight: "calc(100vh - 64px)" }}>
           <Outlet />
         </Content>
       </AntLayout>

@@ -1,7 +1,6 @@
-// src/pages/admin/Notifications.jsx
 import React, { useEffect, useState } from "react";
-import { Card, List, Button, Modal, Input, Select, message } from "antd";
-import { BellOutlined, PlusOutlined } from "@ant-design/icons";
+import { Card, List, Button, Modal, Input, Select, message, Popconfirm } from "antd";
+import { BellOutlined, PlusOutlined, DeleteOutlined } from "@ant-design/icons";
 
 const { TextArea } = Input;
 
@@ -11,7 +10,7 @@ const Notifications = () => {
   const [newNotification, setNewNotification] = useState({
     title: "",
     message: "",
-    targetRoles: ["student"], 
+    targetRoles: ["student"],
   });
 
   useEffect(() => {
@@ -48,6 +47,12 @@ const Notifications = () => {
     );
     saveToStorage(updated);
     message.success("Marked as read");
+  };
+
+  const deleteNotification = (notifId) => {
+    const updated = notifications.filter((n) => n.id !== notifId);
+    saveToStorage(updated);
+    message.success("Notification deleted");
   };
 
   return (
@@ -94,6 +99,16 @@ const Notifications = () => {
                     Mark as Read
                   </Button>
                 ),
+                <Popconfirm
+                  title="Delete this notification?"
+                  onConfirm={() => deleteNotification(item.id)}
+                  okText="Yes"
+                  cancelText="No"
+                >
+                  <Button danger size="small" icon={<DeleteOutlined />}>
+                    Delete
+                  </Button>
+                </Popconfirm>
               ]}
             >
               <List.Item.Meta
