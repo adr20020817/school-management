@@ -4,33 +4,36 @@ const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [parents, setParents] = useState([]);
   const [students, setStudents] = useState([]);
   const [teachers, setTeachers] = useState([]);
 
-  // --- LOAD FROM STORAGE ONCE ---
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
     // eslint-disable-next-line react-hooks/set-state-in-effect
     if (storedUser) setUser(JSON.parse(storedUser));
 
-    const storedParents = localStorage.getItem("parents");
-    if (storedParents) setParents(JSON.parse(storedParents));
-  }, []);
+    const storedStudents = localStorage.getItem("students");
+    if (storedStudents) setStudents(JSON.parse(storedStudents));
 
-  // --- SAVE ON CHANGE ---
-  useEffect(() => {
-    localStorage.setItem("parents", JSON.stringify(parents));
-  }, [parents]);
+    const storedTeachers = localStorage.getItem("teachers");
+    if (storedTeachers) setTeachers(JSON.parse(storedTeachers));
+  }, []);
 
   useEffect(() => {
     localStorage.setItem("user", JSON.stringify(user));
   }, [user]);
 
-  // =============== NEW FUNCTIONS ===============
+  useEffect(() => {
+    localStorage.setItem("students", JSON.stringify(students));
+  }, [students]);
+
+  useEffect(() => {
+    localStorage.setItem("teachers", JSON.stringify(teachers));
+  }, [teachers]);
 
   const login = (userData) => {
     setUser(userData);
+    localStorage.setItem("user", JSON.stringify(userData));
   };
 
   const logout = () => {
@@ -38,21 +41,42 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem("user");
   };
 
-  // =============================================
+  const register = async (values) => {
+    const newUser = {
+      id: Date.now(),
+      name: values.name,
+      email: values.email,
+      password: values.password,
+      role: values.role,
+      regNo:
+        values.role === "student"
+          ? `STD-${Math.floor(1000 + Math.random() * 9000)}`
+          : null,
+    };
+
+    if (values.role === "student") {
+      setStudents((prev) => [...prev, newUser]);
+    }
+
+    if (values.role === "teacher") {
+      setTeachers((prev) => [...prev, newUser]);
+    }
+
+    setUser(newUser);
+    localStorage.setItem("user", JSON.stringify(newUser));
+
+    return newUser;
+  };
 
   return (
     <AuthContext.Provider
       value={{
         user,
-        setUser,
         login,
         logout,
-        parents,
-        setParents,
+        register, // ✅ MUST BE HERE
         students,
-        setStudents,
         teachers,
-        setTeachers,
       }}
     >
       {children}
