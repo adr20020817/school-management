@@ -8,16 +8,21 @@ import logo from "/src/assets/images/Logo.png";
 const { Option } = Select;
 
 const Login = () => {
-  const { login, loading } = useAuth();
+  const { login } = useAuth(); // removed loading, not needed for now
   const navigate = useNavigate();
 
   const onFinish = (values) => {
     try {
-      const loggedUser = login(values); // sync login
+      // Call login from context
+      const loggedUser = login({
+        identifier: values.identifier,
+        password: values.password,
+        role: values.role,
+      });
 
       message.success(`Welcome back, ${loggedUser.name}!`);
 
-      // Navigate based on role
+      // Role-based navigation
       if (loggedUser.role === "student") navigate("/student");
       else if (loggedUser.role === "teacher") navigate("/teacher");
       else navigate("/");
@@ -25,15 +30,6 @@ const Login = () => {
       message.error(err.message || "Invalid credentials");
     }
   };
-
-  // Show spinner while loading users
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-blue-900">
-        <Spin size="large" tip="Please wait, loading data..." />
-      </div>
-    );
-  }
 
   return (
     <div
@@ -55,22 +51,27 @@ const Login = () => {
           borderRadius: 8,
         }}
       >
+        {/* Email or Reg No */}
         <Form.Item
           label="Email or Reg No"
           name="identifier"
-          rules={[{ required: true, message: "Please enter your email or reg no" }]}
+          rules={[
+            { required: true, message: "Please enter your email or reg no" },
+          ]}
         >
-          <Input />
+          <Input placeholder="Enter email or Reg No" />
         </Form.Item>
 
+        {/* Password */}
         <Form.Item
           label="Password"
           name="password"
           rules={[{ required: true, message: "Please enter your password" }]}
         >
-          <Input.Password />
+          <Input.Password placeholder="••••••••" />
         </Form.Item>
 
+        {/* Role */}
         <Form.Item
           label="Role"
           name="role"
@@ -82,17 +83,23 @@ const Login = () => {
           </Select>
         </Form.Item>
 
+        {/* Login Button */}
         <Form.Item>
           <Button
             type="primary"
             htmlType="submit"
             block
-            style={{ backgroundColor: "#FFD700", color: "#0B3D91", fontWeight: "bold" }}
+            style={{
+              backgroundColor: "#FFD700",
+              color: "#0B3D91",
+              fontWeight: "bold",
+            }}
           >
             Login
           </Button>
         </Form.Item>
 
+        {/* Register link */}
         <p className="text-center mt-4">
           Don't have an account?{" "}
           <Link to="/register" className="text-blue-900 font-semibold">
