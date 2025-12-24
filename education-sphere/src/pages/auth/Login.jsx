@@ -8,13 +8,12 @@ import logo from "/src/assets/images/Logo.png";
 const { Option } = Select;
 
 const Login = () => {
-  const { login } = useAuth(); // removed loading, not needed for now
+  const { login } = useAuth();
   const navigate = useNavigate();
 
-  const onFinish = (values) => {
+  const onFinish = async (values) => {
     try {
-      // Call login from context
-      const loggedUser = login({
+      const loggedUser = await login({
         identifier: values.identifier,
         password: values.password,
         role: values.role,
@@ -98,6 +97,13 @@ const Login = () => {
             Login
           </Button>
         </Form.Item>
+
+        {/* Forgot password link */}
+        <p className="text-center mb-2">
+          <Link to="/forgot-password" className="text-blue-900 font-semibold">
+            Forgot Password?
+          </Link>
+        </p>
 
         {/* Register link */}
         <p className="text-center mt-4">

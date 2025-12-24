@@ -17,7 +17,7 @@ const Register = () => {
         `Registered successfully! Your Reg No: ${newUser.regNo || "N/A"}`
       );
 
-      // ✅ Role-based navigation
+      // Role-based navigation
       if (newUser.role === "student") {
         navigate("/student");
       } else if (newUser.role === "teacher") {
